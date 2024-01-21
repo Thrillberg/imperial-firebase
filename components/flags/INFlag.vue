@@ -1,0 +1,165 @@
+<template>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 1500 1000"
+    :width="width"
+    :height="height"
+  >
+    <filter id="grayscale">
+      <feColorMatrix
+        type="matrix"
+        values="0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0"
+      />
+    </filter>
+    <g
+      :clip-path="fleet ? 'url(#fleetClip)' : ''"
+      :filter="activeFilter"
+    >
+      <rect
+        id="rect333"
+        width="1500"
+        fill="#ff9933"
+        x="0.5"
+        style="stroke-width:6.66667"
+        height="1000"
+        y="1"
+      />
+      <rect
+        id="rect335"
+        width="1500"
+        height="333.33334"
+        y="334.33331"
+        fill="#ffffff"
+        x="0.5"
+        style="stroke-width:6.66667"
+      />
+      <rect
+        id="rect337"
+        width="1500"
+        height="333.33334"
+        y="667.66669"
+        fill="#128807"
+        x="0.5"
+        style="stroke-width:6.66667"
+      />
+      <g
+        id="g363"
+        transform="matrix(6.6666668,0,0,6.6666668,750.5,501)"
+      >
+        <circle
+          id="circle339"
+          r="20"
+          fill="#000088"
+          stroke-width="0"
+          cx="0"
+          cy="0"
+        />
+        <circle
+          id="circle341"
+          r="17.5"
+          fill="#ffffff"
+          stroke-width="0"
+          cx="0"
+          cy="0"
+        />
+        <circle
+          id="circle343"
+          r="3.5"
+          fill="#000088"
+          stroke-width="0"
+          cx="0"
+          cy="0"
+        />
+        <g
+          id="d"
+        >
+          <g
+            id="c"
+          >
+            <g
+              id="b"
+            >
+              <g
+                id="a"
+              >
+                <circle
+                  id="circle345"
+                  r="0.875"
+                  fill="#000088"
+                  stroke-width="0"
+                  transform="rotate(7.5,-8.75,133.4992)"
+                  cx="0"
+                  cy="0"
+                />
+                <path
+                  id="path347"
+                  fill="#000088"
+                  stroke-width="0"
+                  d="M 0,17.5 0.6,7 C 0.6,7 0,2 0,2 0,2 -0.6,7 -0.6,7 Z"
+                />
+              </g>
+              <use
+                id="use350"
+                xlink:href="#a"
+                transform="rotate(15)"
+                x="0"
+                y="0"
+                width="100%"
+                height="100%"
+              />
+            </g>
+            <use
+              id="use353"
+              xlink:href="#b"
+              transform="rotate(30)"
+              x="0"
+              y="0"
+              width="100%"
+              height="100%"
+            />
+          </g>
+          <use
+            id="use356"
+            xlink:href="#c"
+            transform="rotate(60)"
+            x="0"
+            y="0"
+            width="100%"
+            height="100%"
+          />
+        </g>
+        <use
+          id="use359"
+          xlink:href="#d"
+          transform="rotate(120)"
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+        />
+        <use
+          id="use361"
+          xlink:href="#d"
+          transform="rotate(-120)"
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+        />
+      </g>
+    </g>
+  </svg>
+</template>
+
+<script>
+export default {
+  name: 'INFlag',
+  props: {
+    activeFilter: String,
+    fleet: Boolean,
+    width: String,
+    height: String,
+    transform: String,
+  },
+};
+</script>
