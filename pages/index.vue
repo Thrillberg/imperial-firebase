@@ -8,7 +8,7 @@
   </v-container>
   <v-container v-else>
     <YourGames
-      v-if="user.registered || user.anonymityConfirmedAt"
+      v-if="user"
       :games="yourGames"
       :user="user"
     />

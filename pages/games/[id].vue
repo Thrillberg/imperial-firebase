@@ -1,22 +1,99 @@
 <template>
-  <v-tooltip
-    text="How to Play Imperial"
-    location="bottom"
-  >
-    <template #activator="{ props }">
-      <v-btn
-        prepend-icon="mdi-help-circle-outline"
-        variant="plain"
-        size="x-large"
-        style="position: fixed; z-index: 1; top: calc(100vh - 60px); height: 0px;"
-        class="pr-13"
-        v-bind="props"
+  <v-sheet>
+    <v-tooltip
+      text="How to Play Imperial"
+      location="bottom"
+    >
+      <template #activator="{ props }">
+        <v-btn
+          prepend-icon="mdi-help-circle-outline"
+          variant="plain"
+          size="x-large"
+          style="position: fixed; z-index: 1; top: calc(100vh - 60px); height: 0px;"
+          class="pr-13"
+          v-bind="props"
+        >
+          <v-dialog
+            v-model="rulesDialogFromSidebar"
+            activator="parent"
+            width="75%"
+          >
+            <v-card>
+              <v-card-title>
+                <v-toolbar color="surface">
+                  How to Play Imperial
+                  <template #append>
+                    <v-btn
+                      icon="mdi-close"
+                      @click="rulesDialogFromSidebar = false"
+                    />
+                  </template>
+                </v-toolbar>
+              </v-card-title>
+              <v-card-subtitle>
+                A Brief and Incomplete Guide
+              </v-card-subtitle>
+              <Rules />
+              <v-card-actions>
+                <v-btn
+                  color="primary-darken-1"
+                  block
+                  @click="rulesDialogFromSidebar = false"
+                >
+                  Close
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+        </v-btn>
+      </template>
+    </v-tooltip>
+    <v-row
+      :class="playersInGame.length === 1 ? 'bg-secondary' : ''"
+      justify="space-between"
+      class="py-3"
+    >
+      <v-col class="my-auto mx-2">
+        <span class="text-h5 mr-2">{{ game.name }} <span v-if="game.clonedFromGame">(clone)</span></span>
+        <v-btn
+          v-if="game.clonedFromGame && gameStarted"
+          size="x-small"
+          style="vertical-align: super;"
+          color="primary"
+          @click="goToSourceGame"
+        >
+          Back to source game
+        </v-btn>
+        <v-btn
+          v-else-if="gameStarted"
+          size="x-small"
+          style="vertical-align: text-bottom;"
+          color="primary"
+          @click="cloneGame"
+        >
+          Clone game
+        </v-btn>
+      </v-col>
+      <v-col
+        v-if="playersInGame.length === 1"
+        style="text-align: right;"
+        class="mx-2"
       >
         <v-dialog
-          v-model="rulesDialogFromSidebar"
+          v-model="rulesDialog"
           activator="parent"
           width="75%"
         >
+          <template #activator="{ props }">
+            <v-btn
+              class="text-none"
+              color="primary"
+              prepend-icon="mdi-book-open-variant"
+              v-bind="props"
+            >
+              How do I play Imperial?
+            </v-btn>
+          </template>
           <v-card>
             <v-card-title>
               <v-toolbar color="surface">
@@ -24,7 +101,7 @@
                 <template #append>
                   <v-btn
                     icon="mdi-close"
-                    @click="rulesDialogFromSidebar = false"
+                    @click="rulesDialog = false"
                   />
                 </template>
               </v-toolbar>
@@ -32,279 +109,276 @@
             <v-card-subtitle>
               A Brief and Incomplete Guide
             </v-card-subtitle>
+            <v-card-text>
+              <i>
+                You're playing a solo hotseat game, which means that you control all the players.
+                Explore the rondel on the main game screen for information on what moves each nation can perform.
+              </i>
+            </v-card-text>
             <Rules />
             <v-card-actions>
               <v-btn
                 color="primary-darken-1"
                 block
-                @click="rulesDialogFromSidebar = false"
+                @click="rulesDialog = false"
               >
                 Close
               </v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
-      </v-btn>
-    </template>
-  </v-tooltip>
-  <v-row
-    :class="playersInGame.length === 1 ? 'bg-secondary' : ''"
-    justify="space-between"
-    class="py-3"
-  >
-    <v-col class="my-auto mx-2">
-      <span class="text-h5 mr-2">{{ game.name }} <span v-if="game.clonedFromGame">(clone)</span></span>
-      <v-btn
-        v-if="game.clonedFromGame && gameStarted"
-        size="x-small"
-        style="vertical-align: super;"
-        color="primary"
-        @click="goToSourceGame"
-      >
-        Back to source game
-      </v-btn>
-      <v-btn
-        v-else-if="gameStarted"
-        size="x-small"
-        style="vertical-align: text-bottom;"
-        color="primary"
-        @click="cloneGame"
-      >
-        Clone game
-      </v-btn>
-    </v-col>
-    <v-col
-      v-if="playersInGame.length === 1"
-      style="text-align: right;"
-      class="mx-2"
-    >
-      <v-dialog
-        v-model="rulesDialog"
-        activator="parent"
-        width="75%"
-      >
-        <template #activator="{ props }">
-          <v-btn
-            class="text-none"
-            color="primary"
-            prepend-icon="mdi-book-open-variant"
-            v-bind="props"
-          >
-            How do I play Imperial?
-          </v-btn>
-        </template>
-        <v-card>
-          <v-card-title>
-            <v-toolbar color="surface">
-              How to Play Imperial
-              <template #append>
-                <v-btn
-                  icon="mdi-close"
-                  @click="rulesDialog = false"
-                />
-              </template>
-            </v-toolbar>
-          </v-card-title>
-          <v-card-subtitle>
-            A Brief and Incomplete Guide
-          </v-card-subtitle>
-          <v-card-text>
-            <i>
-              You're playing a solo hotseat game, which means that you control all the players.
-              Explore the rondel on the main game screen for information on what moves each nation can perform.
-            </i>
-          </v-card-text>
-          <Rules />
-          <v-card-actions>
-            <v-btn
-              color="primary-darken-1"
-              block
-              @click="rulesDialog = false"
-            >
-              Close
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-    </v-col>
-  </v-row>
-  <v-sheet v-if="gameStarted">
-    <TurnStatus
-      :game="imperial.instance"
-      :user="user"
-      :controlling-player-name="controllingPlayerName"
-      :paused="paused()"
-    />
-    <v-card class="d-flex">
+      </v-col>
+    </v-row>
+    <v-sheet v-if="gameStarted">
+      <TurnStatus
+        :game="imperial.instance"
+        :user="user"
+        :controlling-player-name="controllingPlayerName"
+        :paused="paused()"
+      />
       <v-card class="d-flex">
-        <v-tabs
-          v-model="tab"
-          color="primary-darken-1"
-          direction="vertical"
-        >
-          <v-tab value="nations">
-            <v-tooltip
-              text="Nations"
-              location="bottom"
-            >
-              <template #activator="{ props }">
-                <v-icon
-                  v-bind="props"
-                  size="x-large"
-                >
-                  mdi-flag
-                </v-icon>
-              </template>
-            </v-tooltip>
-          </v-tab>
-          <v-tab value="players">
-            <v-tooltip
-              text="Players"
-              location="bottom"
-            >
-              <template #activator="{ props }">
-                <v-icon
-                  v-bind="props"
-                  size="x-large"
-                >
-                  mdi-account-group
-                </v-icon>
-              </template>
-            </v-tooltip>
-          </v-tab>
-          <v-tab value="gameLog">
-            <v-tooltip
-              text="Game Log"
-              location="bottom"
-            >
-              <template #activator="{ props }">
-                <v-icon
-                  v-bind="props"
-                  size="x-large"
-                >
-                  mdi-script-text-outline
-                </v-icon>
-              </template>
-            </v-tooltip>
-          </v-tab>
-        </v-tabs>
+        <v-card class="d-flex">
+          <v-tabs
+            v-model="tab"
+            color="primary-darken-1"
+            direction="vertical"
+          >
+            <v-tab value="nations">
+              <v-tooltip
+                text="Nations"
+                location="bottom"
+              >
+                <template #activator="{ props }">
+                  <v-icon
+                    v-bind="props"
+                    size="x-large"
+                  >
+                    mdi-flag
+                  </v-icon>
+                </template>
+              </v-tooltip>
+            </v-tab>
+            <v-tab value="players">
+              <v-tooltip
+                text="Players"
+                location="bottom"
+              >
+                <template #activator="{ props }">
+                  <v-icon
+                    v-bind="props"
+                    size="x-large"
+                  >
+                    mdi-account-group
+                  </v-icon>
+                </template>
+              </v-tooltip>
+            </v-tab>
+            <v-tab value="gameLog">
+              <v-tooltip
+                text="Game Log"
+                location="bottom"
+              >
+                <template #activator="{ props }">
+                  <v-icon
+                    v-bind="props"
+                    size="x-large"
+                  >
+                    mdi-script-text-outline
+                  </v-icon>
+                </template>
+              </v-tooltip>
+            </v-tab>
+          </v-tabs>
 
-        <v-window v-model="tab">
-          <v-window-item value="nations">
-            <NationComponent
-              v-for="[nation] of imperial.instance.nations"
-              :key="nation.value"
-              :current-nation="imperial.instance.currentNation.value"
-              :nation="nation.value"
-              :treasury="imperial.instance.nations.get(nation).treasury"
-              :can-pay-out="canPayOut(nation)"
-              :power-points="imperial.instance.nations.get(nation).powerPoints"
-              :controller="imperial.instance.nations.get(nation).controller"
-              :current-player="user.displayName"
-              :base-game="imperial.instance.baseGame"
-              :winner="imperial.instance.winner"
-            />
-          </v-window-item>
+          <v-window v-model="tab">
+            <v-window-item value="nations">
+              <NationComponent
+                v-for="[nation] of imperial.instance.nations"
+                :key="nation.value"
+                :current-nation="imperial.instance.currentNation.value"
+                :nation="nation.value"
+                :treasury="imperial.instance.nations.get(nation).treasury"
+                :can-pay-out="canPayOut(nation)"
+                :power-points="imperial.instance.nations.get(nation).powerPoints"
+                :controller="imperial.instance.nations.get(nation).controller"
+                :current-player="user.displayName"
+                :base-game="imperial.instance.baseGame"
+                :winner="imperial.instance.winner"
+              />
+            </v-window-item>
 
-          <v-window-item value="players">
-            <GameDetails
-              :game="imperial"
-              :game-data="game"
-              :user="user"
-              :controlling-player-name="controllingPlayerName"
-              :online-users="users"
-              :paused="paused()"
-              :hosting-this-game="hostingThisGame"
-              @tick="tickWithAction"
-              @toggle-trade-in="toggleTradeIn"
-            />
-          </v-window-item>
-
-          <v-window-item value="gameLog">
-            <GameLog
-              :log="imperial.instance.annotatedLog"
-              :log-timestamps="logTimestamps"
-              :board="board"
-            />
-          </v-window-item>
-        </v-window>
-      </v-card>
-      <v-card-text>
-        <v-sheet
-          v-if="
-            game.baseGame === 'imperial' ||
-              game.baseGame === 'imperialEurope2030' ||
-              game.baseGame === 'imperialAsia'
-          "
-        >
-          <v-row>
-            <v-col cols="8">
-              <Board
-                :config="boardConfig"
-                :game="imperial.instance"
-                :game-started="gameStarted"
-                :paused="paused()"
+            <v-window-item value="players">
+              <GameDetails
+                :game="imperial"
+                :game-data="game"
                 :user="user"
-                :province-with-fight="provinceWithFight"
-                :provinces-with-production="provincesWithProduction"
-                :select-province="selectProvince"
-                :units-to-import="importPlacements"
-                :valid-provinces="validProvinces"
-                @fight-resolved="resolveFight"
-                @production-resolved="resolveProduction"
+                :controlling-player-name="controllingPlayerName"
+                :online-users="users"
+                :paused="paused()"
+                :hosting-this-game="hostingThisGame"
+                @tick="tickWithAction"
+                @toggle-trade-in="toggleTradeIn"
               />
-              <TimeTravelButtons
-                :game="imperial.instance"
-                :popped-turns="poppedTurns"
-                @back-to-game-start-event="backToGameStart"
-                @back-to-round-start-event="backToRoundStart"
-                @back-event="back"
-                @forward-event="forward"
-                @forward-to-current-action-event="forwardToCurrentAction"
+            </v-window-item>
+
+            <v-window-item value="gameLog">
+              <GameLog
+                :log="imperial.instance.annotatedLog"
+                :log-timestamps="logTimestamps"
+                :board="board"
               />
-            </v-col>
-            <v-col cols="4">
+            </v-window-item>
+          </v-window>
+        </v-card>
+        <v-card-text>
+          <v-sheet
+            v-if="
+              game.baseGame === 'imperial' ||
+                game.baseGame === 'imperialEurope2030' ||
+                game.baseGame === 'imperialAsia'
+            "
+          >
+            <v-row>
+              <v-col cols="8">
+                <Board
+                  :config="boardConfig"
+                  :game="imperial.instance"
+                  :game-started="gameStarted"
+                  :paused="paused()"
+                  :user="user"
+                  :province-with-fight="provinceWithFight"
+                  :provinces-with-production="provincesWithProduction"
+                  :select-province="selectProvince"
+                  :units-to-import="importPlacements"
+                  :valid-provinces="validProvinces"
+                  @fight-resolved="resolveFight"
+                  @production-resolved="resolveProduction"
+                />
+                <TimeTravelButtons
+                  :game="imperial.instance"
+                  :popped-turns="poppedTurns"
+                  @back-to-game-start-event="backToGameStart"
+                  @back-to-round-start-event="backToRoundStart"
+                  @back-event="back"
+                  @forward-event="forward"
+                  @forward-to-current-action-event="forwardToCurrentAction"
+                />
+              </v-col>
+              <v-col cols="4">
+                <Rondel
+                  v-if="
+                    !imperial.winner"
+                  :game="imperial.instance"
+                  :name="user.displayName"
+                  :paused="paused()"
+                  :hosting-this-game="hostingThisGame"
+                  @tick-with-action="tickWithAction"
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <ControlPanel
+                  :game="imperial.instance"
+                  :choose-import-type="importProvince"
+                  :controlling-player-name="controllingPlayerName"
+                  :user="user"
+                  :import-placements="importPlacements"
+                  :game-data="game"
+                  :traded-in-bond-nation="tradedInBondNation"
+                  :traded-in-value="tradedInValue"
+                  :paused="paused()"
+                  :hosting-this-game="hostingThisGame"
+                  @tick="tickWithAction"
+                  @end-maneuver="endManeuver"
+                  @choose-import-type="makeImportTypeChoice"
+                  @run-import="runImport"
+                  @skip-build-factory="skipBuildFactory"
+                  @purchase-bond="purchaseBond"
+                  @toggle-trade-in="toggleTradeIn"
+                />
+              </v-col>
+            </v-row>
+          </v-sheet>
+          <v-sheet v-else>
+            <v-row>
+              <v-col>
+                <Board
+                  :config="boardConfig"
+                  :game="imperial.instance"
+                  :game-started="gameStarted"
+                  :paused="paused()"
+                  :user="user"
+                  :province-with-fight="provinceWithFight"
+                  :provinces-with-production="provincesWithProduction"
+                  :select-province="selectProvince"
+                  :units-to-import="importPlacements"
+                  :valid-provinces="validProvinces"
+                  @fight-resolved="resolveFight"
+                  @production-resolved="resolveProduction"
+                />
+                <TimeTravelButtons
+                  :game="imperial.instance"
+                  :popped-turns="poppedTurns"
+                  @back-to-game-start-event="backToGameStart"
+                  @back-to-round-start-event="backToRoundStart"
+                  @back-event="back"
+                  @forward-event="forward"
+                  @forward-to-current-action-event="forwardToCurrentAction"
+                />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <ControlPanel
+                  :game="imperial.instance"
+                  :choose-import-type="importProvince"
+                  :controlling-player-name="controllingPlayerName"
+                  :user="user"
+                  :import-placements="importPlacements"
+                  :game-data="game"
+                  :traded-in-bond-nation="tradedInBondNation"
+                  :traded-in-value="tradedInValue"
+                  :paused="paused()"
+                  :hosting-this-game="hostingThisGame"
+                  @tick="tickWithAction"
+                  @end-maneuver="endManeuver"
+                  @choose-import-type="makeImportTypeChoice"
+                  @run-import="runImport"
+                  @skip-build-factory="skipBuildFactory"
+                  @purchase-bond="purchaseBond"
+                  @toggle-trade-in="toggleTradeIn"
+                />
+              </v-col>
+            </v-row>
+            <v-row>
               <Rondel
-                v-if="
-                  !imperial.winner"
+                v-if="!imperial.instance.winner"
                 :game="imperial.instance"
                 :name="user.displayName"
                 :paused="paused()"
                 :hosting-this-game="hostingThisGame"
                 @tick-with-action="tickWithAction"
               />
-            </v-col>
-          </v-row>
+            </v-row>
+          </v-sheet>
+          <div v-if="game.winner">
+            <NationControlChart :game="imperial" />
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-sheet>
+    <div v-else-if="game.cancelledAt">
+      This game was cancelled by the host
+    </div>
+    <div v-else>
+      <v-card>
+        <v-card-text>
           <v-row>
-            <v-col>
-              <ControlPanel
-                :game="imperial.instance"
-                :choose-import-type="importProvince"
-                :controlling-player-name="controllingPlayerName"
-                :user="user"
-                :import-placements="importPlacements"
-                :game-data="game"
-                :traded-in-bond-nation="tradedInBondNation"
-                :traded-in-value="tradedInValue"
-                :paused="paused()"
-                :hosting-this-game="hostingThisGame"
-                @tick="tickWithAction"
-                @end-maneuver="endManeuver"
-                @choose-import-type="makeImportTypeChoice"
-                @run-import="runImport"
-                @skip-build-factory="skipBuildFactory"
-                @purchase-bond="purchaseBond"
-                @toggle-trade-in="toggleTradeIn"
-              />
-            </v-col>
-          </v-row>
-        </v-sheet>
-        <v-sheet v-else>
-          <v-row>
-            <v-col>
+            <v-col cols="8">
               <Board
                 :config="boardConfig"
-                :game="imperial"
+                :game="game"
                 :game-started="gameStarted"
                 :paused="paused()"
                 :user="user"
@@ -316,155 +390,9 @@
                 @fight-resolved="resolveFight"
                 @production-resolved="resolveProduction"
               />
-              <TimeTravelButtons
-                :game="imperial"
-                :popped-turns="poppedTurns"
-                @back-to-game-start-event="backToGameStart"
-                @back-to-round-start-event="backToRoundStart"
-                @back-event="back"
-                @forward-event="forward"
-                @forward-to-current-action-event="forwardToCurrentAction"
-              />
             </v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <ControlPanel
-                :game="imperial.instance"
-                :choose-import-type="importProvince"
-                :controlling-player-name="controllingPlayerName"
-                :user="user"
-                :import-placements="importPlacements"
-                :game-data="game"
-                :traded-in-bond-nation="tradedInBondNation"
-                :traded-in-value="tradedInValue"
-                :paused="paused()"
-                :hosting-this-game="hostingThisGame"
-                @tick="tickWithAction"
-                @end-maneuver="endManeuver"
-                @choose-import-type="makeImportTypeChoice"
-                @run-import="runImport"
-                @skip-build-factory="skipBuildFactory"
-                @purchase-bond="purchaseBond"
-                @toggle-trade-in="toggleTradeIn"
-              />
-            </v-col>
-          </v-row>
-          <v-row>
-            <Rondel
-              v-if="!imperial.winner"
-              :game="imperial"
-              :name="user.displayName"
-              :paused="paused()"
-              :hosting-this-game="hostingThisGame"
-              @tick-with-action="tickWithAction"
-            />
-          </v-row>
-        </v-sheet>
-        <div v-if="game.winner">
-          <NationControlChart :game="imperial" />
-        </div>
-      </v-card-text>
-    </v-card>
-  </v-sheet>
-  <div v-else-if="game.cancelledAt">
-    This game was cancelled by the host
-  </div>
-  <div v-else>
-    <v-card>
-      <v-card-text>
-        <v-row>
-          <v-col cols="8">
-            <Board
-              :config="boardConfig"
-              :game="imperial"
-              :game-started="gameStarted"
-              :paused="paused()"
-              :user="user"
-              :province-with-fight="provinceWithFight"
-              :provinces-with-production="provincesWithProduction"
-              :select-province="selectProvince"
-              :units-to-import="importPlacements"
-              :valid-provinces="validProvinces"
-              @fight-resolved="resolveFight"
-              @production-resolved="resolveProduction"
-            />
-          </v-col>
-          <v-col align-self="center">
-            <div v-if="hostingThisGame">
-              <p>
-                <b>Players:</b>
-                <span>{{ playersInGame.join(", ") }}</span>
-              </p>
-              <p>
-                <b>Base game:</b>
-                <span>{{ baseGameString(game.baseGame) }}</span>
-              </p>
-              <p>
-                <b>Variant:</b>
-                <span>{{ variant(game.variant) }}</span>
-              </p>
-              <v-btn
-                v-if="playersInGame.length === 1"
-                color="primary-darken-1"
-                class="mt-2"
-                block
-                @click="startGame(game, gameRef)"
-              >
-                Start Solo Game (sandbox mode)
-              </v-btn>
-              <v-btn
-                v-else
-                color="primary-darken-1"
-                block
-                @click="startGame(game, gameRef)"
-              >
-                Start Game
-              </v-btn>
-              <v-btn
-                color="error"
-                class="mt-2"
-                block
-                @click="cancelGame"
-              >
-                Cancel Game
-              </v-btn>
-              <v-btn
-                v-for="player in otherPlayersInGame"
-                :key="player"
-                color="error"
-                block
-                @click="boot(player)"
-              >
-                Boot {{ player }}
-              </v-btn>
-            </div>
-            <div v-else-if="playingInThisGame">
-              <p>
-                <b>Players:</b>
-                <span>{{ playersInGame.join(", ") }}</span>
-              </p>
-              <p>
-                <b>Base game:</b>
-                <span>{{ baseGameString(game.baseGame) }}</span>
-              </p>
-              <p>
-                <b>Variant:</b>
-                <span>{{ variant(game.variant) }}</span>
-              </p>
-              <div class="text-2xl m-2">
-                Game not yet started!
-              </div>
-              <v-btn
-                color="error"
-                block
-                @click="leaveGame(user.displayName)"
-              >
-                Leave Game
-              </v-btn>
-            </div>
-            <div v-else-if="!joinedGame">
-              <div class="mx-auto p-2 text-center">
+            <v-col align-self="center">
+              <div v-if="hostingThisGame">
                 <p>
                   <b>Players:</b>
                   <span>{{ playersInGame.join(", ") }}</span>
@@ -477,27 +405,101 @@
                   <b>Variant:</b>
                   <span>{{ variant(game.variant) }}</span>
                 </p>
+                <v-btn
+                  v-if="playersInGame.length === 1"
+                  color="primary-darken-1"
+                  class="mt-2"
+                  block
+                  @click="startGame(game, gameRef)"
+                >
+                  Start Solo Game (sandbox mode)
+                </v-btn>
+                <v-btn
+                  v-else
+                  color="primary-darken-1"
+                  block
+                  @click="startGame(game, gameRef)"
+                >
+                  Start Game
+                </v-btn>
+                <v-btn
+                  color="error"
+                  class="mt-2"
+                  block
+                  @click="cancelGame"
+                >
+                  Cancel Game
+                </v-btn>
+                <v-btn
+                  v-for="player in otherPlayersInGame"
+                  :key="player"
+                  color="error"
+                  block
+                  @click="boot(player)"
+                >
+                  Boot {{ player }}
+                </v-btn>
               </div>
-              <v-btn
-                v-if="playersInGame.length < 6"
-                color="primary-darken-1"
-                block
-                @click="joinGame"
-              >
-                Join This Game
-              </v-btn>
-              <div
-                v-else
-                class="mx-auto p-2 text-center"
-              >
-                <b>Game is full but not yet started!</b>
+              <div v-else-if="playingInThisGame">
+                <p>
+                  <b>Players:</b>
+                  <span>{{ playersInGame.join(", ") }}</span>
+                </p>
+                <p>
+                  <b>Base game:</b>
+                  <span>{{ baseGameString(game.baseGame) }}</span>
+                </p>
+                <p>
+                  <b>Variant:</b>
+                  <span>{{ variant(game.variant) }}</span>
+                </p>
+                <div class="text-2xl m-2">
+                  Game not yet started!
+                </div>
+                <v-btn
+                  color="error"
+                  block
+                  @click="leaveGame(user.displayName)"
+                >
+                  Leave Game
+                </v-btn>
               </div>
-            </div>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
-  </div>
+              <div v-else-if="!joinedGame">
+                <div class="mx-auto p-2 text-center">
+                  <p>
+                    <b>Players:</b>
+                    <span>{{ playersInGame.join(", ") }}</span>
+                  </p>
+                  <p>
+                    <b>Base game:</b>
+                    <span>{{ baseGameString(game.baseGame) }}</span>
+                  </p>
+                  <p>
+                    <b>Variant:</b>
+                    <span>{{ variant(game.variant) }}</span>
+                  </p>
+                </div>
+                <v-btn
+                  v-if="playersInGame.length < 6"
+                  color="primary-darken-1"
+                  block
+                  @click="joinGame"
+                >
+                  Join This Game
+                </v-btn>
+                <div
+                  v-else
+                  class="mx-auto p-2 text-center"
+                >
+                  <b>Game is full but not yet started!</b>
+                </div>
+              </div>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+    </div>
+  </v-sheet>
 </template>
 
 <script setup>
@@ -540,6 +542,7 @@ const props = defineProps({
   user: { type: Object, default: () => {} },
   env: { type: String, default: '' },
   games: { type: Array, default: () => [] },
+  lovelyString: { type: String, default: '' },
   observers: { type: Array, default: () => [] },
   users: { type: Array, default: () => [] },
 });
@@ -547,11 +550,13 @@ const emits = defineEmits(['receivegame']);
 
 // Firebase variables
 const gameRef = doc(db, 'games', route.params.id)
-const gameSnap = await getDoc(gameRef);
+let gameSnap = await getDoc(gameRef);
 const actionsCollection = collection(db, 'games', route.params.id, 'actions')
 let actionsSnap;
 let actionsQuery;
 
+const joinedGame = ref(false);
+const playingInThisGame = ref(false);
 let game = {};
 let actions = [];
 const logTimestamps = [];
@@ -611,9 +616,14 @@ if (game.baseGame === 'imperial' || game.baseGame === 'imperialEurope2030') {
   board = imperialAsiaBoard;
 }
 const imperial = ref({ instance: null });
-let playersInGame = [];
+const playersInGame = ref([]);
 
 const setUpBoard = async () => {
+  gameSnap = await getDoc(gameRef);
+  if (gameSnap.get('cancelledAt')) {
+    router.push('/');
+  }
+  
   actionsQuery = await query(actionsCollection, orderBy('timestamp'));
   actionsSnap = await getDocs(actionsQuery);
   actions = [];
@@ -627,11 +637,17 @@ const setUpBoard = async () => {
   game.name = gameSnap.get('name');
   game.host = gameSnap.get('host');
   game.players = gameSnap.get('players');
-  playersInGame = game.players.map((p) => p.name);
+  playersInGame.value = game.players.map((p) => p.name);
   hostingThisGame = game.host === props.user.displayName;
 
   game.variant = gameSnap.get('variant');
   game.players = gameSnap.get('players');
+
+  for (const player of playersInGame.value) {
+    if (player === props.user.displayName) {
+      playingInThisGame.value = true;
+    }
+  }
 
   if (actions.length > 0) {
     const newImperial = new ImperialGameCoordinator(board, new Logger('dev', game.id));
@@ -704,19 +720,6 @@ const silenceAudio = false;
 //   return [];
 // };
 
-const playingInThisGame = () => {
-  let playingInThisGame = false;
-  for (const player of playersInGame) {
-    if (player === props.user.displayName) {
-      playingInThisGame = true;
-    }
-  }
-  if (playingInThisGame) {
-    return true;
-  }
-  return false;
-};
-
 const paused = () => {
   if (poppedTurns.length > 0) {
     return true;
@@ -755,13 +758,16 @@ const paused = () => {
   //   // },
 
 const otherPlayersInGame = () => {
-  return playersInGame.filter((player) => player !== props.user.displayName);
-}
+  return playersInGame.value.filter((player) => player !== props.user.displayName);
+};
 
-  //   joinGame() {
-  //     this.joinedGame = true;
-  //     // apiClient.joinGame(this.$cookies.get('user_id'), this.$route.params.id, this.profile.username);
-  //   },
+const joinGame = async () => {
+  joinedGame.value = true;
+  const gameSnap = await getDoc(gameRef);
+  const players = gameSnap.data().players
+  players.push({ name: props.user.displayName, id: props.user.uid });
+  await updateDoc(gameRef, { players })
+};
 
 const cancelGame = async () => {
   await updateDoc(gameRef, {
@@ -769,13 +775,17 @@ const cancelGame = async () => {
   });
   router.push('/');
 };
-  //   boot(playerName) {
-  //     // apiClient.boot(playerName, this.$route.params.id);
-  //   },
-  //   leaveGame(playerName) {
-  //     this.boot(playerName);
-  //     this.$router.push('/');
-  //   },
+
+const boot = async (playerName) => {
+  const gameSnap = await getDoc(gameRef);
+  const players = gameSnap.data().players.filter((player) => player.name !== playerName);
+  await updateDoc(gameRef, { players })
+};
+
+const leaveGame = async (playerName) => {
+  await boot(playerName);
+  router.push('/');
+};
 
 const tickWithAction = async (action) => {
   controllingPlayerName = imperial.currentPlayerName;

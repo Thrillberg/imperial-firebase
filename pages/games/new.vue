@@ -62,7 +62,7 @@
             Public games are listed on the Open Games list.
             Private games can only be joined with the game link.
           </div>
-          <v-radio-group v-model="isGamePublic">
+          <v-radio-group v-model="isPublic">
             <v-radio
               label="Public"
               :value="true"
@@ -120,7 +120,7 @@ const db = getFirestore();
 
 const baseGame = ref('imperial');
 const variant = ref('standard');
-const isGamePublic = ref(true);
+const isPublic = ref(true);
 const createDiscordChannel = ref(false);
 
 useHead({
@@ -134,7 +134,7 @@ const openGame = async () => {
     host: props.user.displayName,
     baseGame: baseGame.value,
     variant: variant.value,
-    isGamePublic: isGamePublic.value,
+    isPublic: isPublic.value,
     players: [{ name: props.user.displayName, id: props.user.uid }],
     createdAt: new Date(),
   });

@@ -11,10 +11,10 @@
       :key="game.id"
       v-masonry-tile
       class="game"
-      :cols="mdAndUp ? '6' : '12'"
+      cols="6"
     >
       <router-link
-        :to="{ path: '/game/' + game.id }"
+        :to="{ path: '/games/' + game.id }"
         style="text-decoration: none"
       >
         <v-hover>
@@ -69,7 +69,6 @@
 </template>
 
 <script>
-import { useDisplay } from 'vuetify';
 import Board from './Board.vue';
 
 import nationColors from '~/nationColors';
@@ -77,6 +76,9 @@ import Imperial from '../../Domain/ImperialGameCoordinator';
 import Flag from './flags/Flag.vue';
 
 import toTime from '../toTime';
+import imperialBoardConfigs from '../imperialBoardConfigs';
+import imperial2030BoardConfigs from '../imperial2030BoardConfigs';
+import imperialAsiaBoardConfigs from '../imperialAsiaBoardConfigs';
 
 export default {
   name: 'YourGames',
@@ -85,15 +87,13 @@ export default {
     games: { type: Array, default: () => [] }, profile: { type: Object, default: () => {} },
   },
   async setup() {
-    const { mdAndUp } = useDisplay();
-    const boardConfigs = {};
-    await import('../imperialBoardConfigs').then((resp) => {
-      boardConfigs.imperial = resp.default.imperial;
-      boardConfigs.imperialEurope2030 = resp.default.imperial;
-    });
-    await import('../imperial2030BoardConfigs').then((resp) => { boardConfigs.imperial2030 = resp.default.imperial2030; });
-    await import('../imperialAsiaBoardConfigs').then((resp) => { boardConfigs.imperialAsia = resp.default.imperialAsia; });
-    return { boardConfigs, mdAndUp };
+    const boardConfigs = {
+      imperial: imperialBoardConfigs,
+      imperialEurope2030: imperialBoardConfigs,
+      imperial2030: imperial2030BoardConfigs,
+      imperialAsia: imperialAsiaBoardConfigs,
+    };
+    return { boardConfigs };
   },
   computed: {
     orderedGames() {
@@ -167,7 +167,7 @@ export default {
       return '';
     },
     nationColors(nation) {
-      return nationColors.nationColors[nation];
+      return nationColors[nation];
     },
   },
 };
