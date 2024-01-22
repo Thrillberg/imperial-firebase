@@ -1,5 +1,5 @@
 <template>
-  <v-container v-if="loaded">
+  <v-container>
     <v-card>
       <v-card-title>Rankings</v-card-title>
       <div
@@ -25,17 +25,6 @@
       </v-card-text>
     </v-card>
   </v-container>
-  <v-container
-    v-else
-    class="text-center"
-  >
-    <v-progress-circular
-      indeterminate
-      color="primary-darken-1"
-      size="100"
-      class="mt-10"
-    />
-  </v-container>
 </template>
 
 <script>
@@ -43,15 +32,16 @@ import { ordinal, rate, rating } from 'openskill';
 
 export default {
   name: 'Rankings',
-  data: () => ({ games: [], loaded: false }),
+  props: { games: { type: Array, default: () => [] }},
+  data: () => ({ rankedGames: [] }),
   computed: {
     users() {
       const userRatings = {};
-      for (const gameUsers of this.games) {
+      for (const gameUsers of this.rankedGames) {
         if (gameUsers.length > 1) {
           const scores = [];
           const ratings = [];
-          for (const { player_name: playerName, player_score: playerScore } of gameUsers) {
+          for (const { playerName, playerScore } of gameUsers) {
             scores.push(playerScore);
             if (!userRatings[playerName]) {
               userRatings[playerName] = rating();
@@ -60,8 +50,8 @@ export default {
           }
           const results = rate(ratings, { score: scores });
           gameUsers.forEach((user, index) => {
-            userRatings[user.player_name] = results[index][0];
-            userRatings[user.player_name].id = user.player_id;
+            userRatings[user.playerName] = results[index][0];
+            userRatings[user.playerName].id = user.playerId;
           });
         }
       }
@@ -78,10 +68,18 @@ export default {
     },
   },
   created() {
-    // document.title = 'Rankings - Imperial';
-    // fetch('/api/ranked_games')
-    //   .then((response) => response.json())
-    //   .then((games) => { this.games = games; this.loaded = true; });
+    document.title = 'Rankings - Imperial';
+    const finishedGames = this.games.filter((game) => {
+      return game.winner
+    });
+    this.rankedGames = finishedGames.map((game) => {
+      return game.players.map((player) => ({
+        gameName: game.name,
+        playerName: player.displayName,
+        playerId: player.id,
+        playerScore: player.score,
+      }))
+    })
   },
 };
 </script>

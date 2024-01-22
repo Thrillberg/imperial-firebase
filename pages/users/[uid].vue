@@ -41,10 +41,9 @@
           @input="resetTurnNotifications"
         >
           <template #prepend>
-            <img
-              src="~/assets/discord.svg"
+            <DiscordLogo
               class="v-icon v-icon--size-default"
-              fill="#5865F2"
+              color="#5865F2"
             />
           </template>
         </v-text-field>
@@ -105,7 +104,7 @@
 </template>
 
 <script setup>
-import { DateTime } from 'luxon';
+import DiscordLogo from '../assets/discord.svg';
 import { getFirestore, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { useRoute } from 'vue-router';
 

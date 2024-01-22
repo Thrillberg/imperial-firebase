@@ -35,7 +35,6 @@ import translateToGameData from "./translateToGameData";
 import anonymityConfirmed from './lib/anonymityConfirmed';
 import { faker } from "@faker-js/faker";
 
-const route = useRoute();
 const user = useCurrentUser();
 const db = getFirestore();
 const auth = getAuth();

@@ -10,7 +10,6 @@
     <YourGames
       v-if="user"
       :games="yourGames"
-      :user="user"
     />
     <CurrentGames :games="currentGames" />
   </v-container>

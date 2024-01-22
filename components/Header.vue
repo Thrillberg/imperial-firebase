@@ -177,7 +177,6 @@
 
 <script setup>
 import { useTheme } from 'vuetify';
-import { faker } from '@faker-js/faker';
 import DiscordLogo from '../assets/discord.svg';
 import PatreonLogo from '../assets/patreon.svg';
 

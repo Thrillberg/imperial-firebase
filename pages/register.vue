@@ -69,10 +69,10 @@ const register = async () => {
   const credential = EmailAuthProvider.credential(email.value, password.value);
   if (auth.currentUser) {
     await linkWithCredential(auth.currentUser, credential)
-    await updateCurrentUserProfile({ displayName: username.value })
   } else {
     await createUserWithEmailAndPassword(auth, email.value, password.value)
   }
+  await updateCurrentUserProfile({ displayName: username.value })
   await setDoc(doc(db, 'userSettings', auth.currentUser.uid), {
     discordId: '',
     turnNotificationsEnabled: false,
