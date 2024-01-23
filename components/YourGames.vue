@@ -1,71 +1,74 @@
 <template>
-  <div class="text-h5">
-    Your Games
-  </div>
-  <v-row
-    v-masonry
-    item-selector=".game"
-  >
-    <v-col
-      v-for="game of orderedGames"
-      :key="game.id"
-      v-masonry-tile
-      class="game"
-      cols="6"
+  <v-container>
+    <div class="text-h5">
+      Your Games
+    </div>
+    <v-row
+      v-masonry
+      item-selector=".game"
     >
-      <router-link
-        :to="{ path: '/games/' + game.id }"
-        style="text-decoration: none"
+      <v-col
+        v-for="game of orderedGames"
+        :key="game.id"
+        v-masonry-tile
+        class="game"
+        cols="6"
       >
-        <v-hover>
-          <template #default="{ isHovering, props }">
-            <v-card
-              :title="game.name + (game.players.length === 1 ? ' (solo)' : '')"
-              :subtitle="currentPlayer(game)"
-              :color="backgroundColor(isHovering, nationColors(JSON.parse(game.latestState).currentNation))"
-              v-bind="props"
-            >
-              <template
-                v-if="game.currentPlayerName
-                  && game.currentPlayerName === profile.username
-                  && !game.winner"
-                #prepend
+        <router-link
+          :to="{ path: '/games/' + game.id }"
+          style="text-decoration: none"
+        >
+          <v-hover>
+            <template #default="{ isHovering, props }">
+              <v-card
+                :title="game.name + (game.players.length === 1 ? ' (solo)' : '')"
+                :subtitle="currentPlayer(game)"
+                :color="backgroundColor(isHovering, nationColors(game.latestState.state.state.currentNation))"
+                v-bind="props"
               >
-                <v-btn
-                  icon="mdi-star"
-                  color="yellow"
-                />
-              </template>
-              <v-card-text>
-                <Board
-                  :config="boardConfigs[game.baseGame]"
-                  :game="Imperial.loadFromJSON(JSON.parse(game.latestState))"
-                  :game-started="true"
-                />
-                <v-row v-if="game.latestState">
-                  <v-col
-                    v-for="player of players(game)"
-                    :key="player.name"
-                    cols="auto"
-                  >
-                    <span>{{ player.name }}</span>
-                    <Flag
-                      v-for="nation of player.nations"
-                      :key="nation"
-                      :nation="nation"
-                      width="30"
-                      height="20"
-                      class="mx-1"
-                    />
-                  </v-col>
-                </v-row>
-              </v-card-text>
-            </v-card>
-          </template>
-        </v-hover>
-      </router-link>
-    </v-col>
-  </v-row>
+                <template
+                  v-if="game.currentPlayerName
+                    && game.currentPlayerName === user.displayName
+                    && !game.winner"
+                  #prepend
+                >
+                  <v-btn
+                    icon="mdi-star"
+                    color="yellow"
+                  />
+                </template>
+                <v-card-text>
+                  <Board
+                    :config="boardConfigs[game.baseGame]"
+                    :game="Imperial.loadFromJSON(game.latestState.state.state)"
+                    :game-started="true"
+                  />
+                  <v-row v-if="game.latestState">
+                    <v-col
+                      v-for="player of players(game)"
+                      :key="player.name"
+                      cols="auto"
+                    >
+                      <span>{{ player.name }}</span>
+                      <Flag
+                        v-for="nation of player.nations"
+                        :key="nation"
+                        :nation="nation"
+                        width="30"
+                        height="20"
+                        class="mx-1"
+                      />
+                    </v-col>
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </template>
+          </v-hover>
+        </router-link>
+      </v-col>
+    </v-row>
+    <CurrentGames :games="currentGames" />
+  </v-container>
 </template>
 
 <script>
@@ -79,12 +82,15 @@ import toTime from '../toTime';
 import imperialBoardConfigs from '../imperialBoardConfigs';
 import imperial2030BoardConfigs from '../imperial2030BoardConfigs';
 import imperialAsiaBoardConfigs from '../imperialAsiaBoardConfigs';
+import { collection, getDocs, getFirestore, limit, orderBy, query } from 'firebase/firestore';
 
 export default {
   name: 'YourGames',
   components: { Board, Flag },
   props: {
-    games: { type: Array, default: () => [] }, profile: { type: Object, default: () => {} },
+    currentGames: { type: Array, default: () => {} },
+    games: { type: Array, default: () => [] },
+    user: { type: Object, default: () => {} },
   },
   async setup() {
     const boardConfigs = {
@@ -132,7 +138,7 @@ export default {
       for (const player of game.players) {
         const playerNations = [];
         const playerObj = { name: player.name };
-        const { nations, currentNation } = JSON.parse(game.latestState);
+        const { nations, currentNation } = game.latestState.state.state;
 
         nations.forEach((nation) => {
           if (nation[Object.keys(nation)[0]].controller === player.name) {

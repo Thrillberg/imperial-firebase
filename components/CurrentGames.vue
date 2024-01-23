@@ -24,16 +24,16 @@
             <v-card
               :title="game.name + (game.players.length === 1 ? ' (solo)' : '')"
               :subtitle="currentPlayer(game) ? currentPlayer(game) + '\'s turn' : ''"
-              :color="backgroundColor(isHovering, nationColors(JSON.parse(game.latestState).currentNation))"
+              :color="backgroundColor(isHovering, nationColors(game.latestState.state.state.currentNation))"
               v-bind="props"
             >
               <v-card-text>
                 <Board
                   :config="boardConfigs[game.baseGame]"
-                  :game="Imperial.loadFromJSON(JSON.parse(game.latestState))"
+                  :game="Imperial.loadFromJSON(game.latestState.state.state)"
                   :game-started="true"
                 />
-                <v-row v-if="game.latestState">
+                <v-row v-if="game.latestState.state.state">
                   <v-col
                     v-for="player of players(game)"
                     :key="player.name"
@@ -111,7 +111,7 @@ export default {
       for (const player of game.players) {
         const playerNations = [];
         const playerObj = { name: player.name };
-        const { nations, currentNation } = JSON.parse(game.latestState);
+        const { nations, currentNation } = game.latestState.state.state;
 
         nations.forEach((nation) => {
           if (nation[Object.keys(nation)[0]].controller === player.name) {

@@ -110,6 +110,10 @@ import { useRoute } from 'vue-router';
 
 const props = defineProps({ user: { type: Object, default: () => {} }})
 
+useHead({
+  title: props.user.displayName + "'s Profile- Imperial",
+});
+
 const db = getFirestore();
 const finishedGames = ref([]);
 const wonGames = ref([]);

@@ -379,12 +379,21 @@ export default class ImperialGameCoordinator {
       units[nation.value] = Object.fromEntries(provinces);
     }
 
+    const provinces = {};
+    for (const [province, data] of this.provinces) {
+      if (data.flag) {
+        provinces[province] = Object.assign({}, data, { flag: { label: data.flag.label, value: data.flag.value } });
+      } else {
+        provinces[province] = data;
+      }
+    }
+
     return {
       baseGame: this.baseGame,
       currentNation: this.currentNation.value,
       nations,
       players,
-      provinces: Object.fromEntries(this.provinces),
+      provinces,
       units,
       variant: this.variant,
       winner: this.winner,

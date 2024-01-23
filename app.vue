@@ -27,7 +27,7 @@
 
 <script setup>
 import { getAuth, signOut } from "firebase/auth";
-import { getFirestore, doc, getDoc, getDocs, collection, query, onSnapshot } from "firebase/firestore";
+import { getFirestore, getDocs, collection, query, onSnapshot, orderBy, limit } from "firebase/firestore";
 
 import Header from './components/Header.vue';
 import translateToGameData from "./translateToGameData";
@@ -47,15 +47,30 @@ const openGames = ref([]);
 const clonedGames = ref([]);
 const gamesCollection = collection(db, 'games');
 
+const getLatestState = async (snapshotsCollection, game, doc) => {
+  const snapshotsQuery = await query(snapshotsCollection, orderBy('timestamp', 'desc'), limit(1));
+  const snapshotsSnap = await getDocs(snapshotsQuery);
+  let latestState;
+  snapshotsSnap.forEach((snapshot) => {
+    latestState = snapshot.data();
+  })
+  const gameIndex = games.value.findIndex((game) => game.id === doc.id);
+  games.value.splice(gameIndex, 1)
+  games.value.push(Object.assign({}, translateToGameData(game), { id: doc.id, latestState }));
+}
+
 const getGames = async () => {
   const gamesSnap = await getDocs(query(gamesCollection));
   games.value = [];
   openGames.value = [];
   clonedGames.value = [];
-  gamesSnap.forEach((doc) => {
+  gamesSnap.forEach(async (doc) => {
     const game = doc.data();
     // Populate all games
-    games.value.push(Object.assign({}, translateToGameData(game), { id: doc.id }));
+    const snapshotsCollection = collection(db, 'games', doc.id, 'snapshots');
+    const snapshotsUnsub = onSnapshot(snapshotsCollection, async () => {
+      await getLatestState(snapshotsCollection, game, doc);
+    });
 
     let inGame = false;
     game.players.forEach((player) => {
@@ -87,7 +102,7 @@ openGames.value.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 clonedGames.value.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 gamesFetched.value = true;
 
-const actionsUnsub = onSnapshot(gamesCollection, async () => {
+const gamesUnsub = onSnapshot(gamesCollection, async () => {
   await getGames();
 });
 

@@ -50,7 +50,7 @@ export default {
     loaded: false,
   }),
   created() {
-    // document.title = 'Games - Imperial';
+    document.title = 'Games - Imperial';
     // fetch('/api/games', { method: 'GET' })
     //   .then((response) => response.json())
     //   .then((data) => { this.games = data; this.loaded = true; });

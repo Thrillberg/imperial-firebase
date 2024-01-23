@@ -3,7 +3,8 @@ import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 export default defineNuxtConfig({
   app: {
     head: {
-      link: [{ rel: 'icon', type: 'image/ico', href: "/assets/favicon.ico" }]
+      link: [{ rel: 'icon', type: 'image/ico', href: "/assets/favicon.ico" }],
+      title: 'Imperial',
     },
   },
   build: {

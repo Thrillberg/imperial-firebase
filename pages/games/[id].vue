@@ -546,7 +546,6 @@ const props = defineProps({
   observers: { type: Array, default: () => [] },
   users: { type: Array, default: () => [] },
 });
-const emits = defineEmits(['receivegame']);
 
 // Firebase variables
 const gameRef = doc(db, 'games', route.params.id)
@@ -563,7 +562,7 @@ const logTimestamps = [];
 let gameLog;
 
 const audioNotification = () => {
-  if (currentPlayer && currentPlayer.name === imperial.currentPlayerName && !silenceAudio) {
+  if (props.user && props.user.displayName === imperial.value.instance.currentPlayerName && !silenceAudio) {
     new Howl({ src: [notification] }).play();
   }
 };
@@ -595,6 +594,13 @@ const getValidProvinces = () => {
   validProvinces.value = Array.from(provinces);
 };
 
+const saveSnapshot = async (state) => {
+  await addDoc(collection(db, 'games', route.params.id, 'snapshots'), {
+    state,
+    timestamp: Date.now(),
+  });
+};
+
 let gameStarted = ref(false);
 let currentPlayer = ref({});
 let controllingPlayerName = ref('');
@@ -623,7 +629,8 @@ const setUpBoard = async () => {
   if (gameSnap.get('cancelledAt')) {
     router.push('/');
   }
-  
+
+  // Fetch actions for the game log
   actionsQuery = await query(actionsCollection, orderBy('timestamp'));
   actionsSnap = await getDocs(actionsQuery);
   actions = [];
@@ -637,6 +644,7 @@ const setUpBoard = async () => {
   game.name = gameSnap.get('name');
   game.host = gameSnap.get('host');
   game.players = gameSnap.get('players');
+  game.state = gameSnap.get('state');
   playersInGame.value = game.players.map((p) => p.name);
   hostingThisGame = game.host === props.user.displayName;
 
@@ -649,12 +657,14 @@ const setUpBoard = async () => {
     }
   }
 
+  // Game has begun
   if (actions.length > 0) {
     const newImperial = new ImperialGameCoordinator(board, new Logger('dev', game.id));
     gameLog = getGameLog(actions, game.baseGame);
     newImperial.tickFromLog(gameLog);
-    currentPlayer = newImperial.players[props.user.displayName];
-    controllingPlayerName = newImperial.currentPlayerName;
+    currentPlayer.value = newImperial.players[props.user.displayName];
+    controllingPlayerName.value = newImperial.currentPlayerName;
+    console.log('setting up the board')
     imperial.value.instance = newImperial;
     gameStarted.value = true;
     audioNotification();
@@ -663,6 +673,9 @@ const setUpBoard = async () => {
 }
 
 await setUpBoard();
+useHead({
+  title: game.name + ' - Imperial',
+});
 
 const rulesDialogFromSidebar = ref(false);
 const rulesDialog = ref(false);
@@ -712,16 +725,8 @@ router.replace({ query: null });
 
 const silenceAudio = false;
 
-  // computed: {
-// const reversedGameLog = () => {
-//   if (this.game.log) {
-//     return this.game.log.slice().reverse();
-//   }
-//   return [];
-// };
-
 const paused = () => {
-  if (poppedTurns.length > 0) {
+  if (poppedTurns.value.length > 0) {
     return true;
   }
 
@@ -788,14 +793,23 @@ const leaveGame = async (playerName) => {
 };
 
 const tickWithAction = async (action) => {
-  controllingPlayerName = imperial.currentPlayerName;
+  controllingPlayerName.value = imperial.value.instance.currentPlayerName;
   if (!paused()) {
     displayFight(action);
     displayProduction(action);
+    const cleanAction = JSON.parse(JSON.stringify(action));
     await addDoc(collection(db, 'games', route.params.id, 'actions'), {
-      action: JSON.parse(JSON.stringify(action)),
+      action: cleanAction,
       timestamp: Date.now(),
     })
+    const newLog = [...imperial.value.instance.log];
+    // newLog.push(action);
+    const newImperial = new ImperialGameCoordinator(board, game.id);
+    newImperial.tickFromLog(newLog)
+    const state = newImperial.toJSON();
+    const availableActions = JSON.parse(JSON.stringify([...newImperial.availableActions]));
+    const log = JSON.parse(JSON.stringify(newImperial.log));
+    await saveSnapshot({ state, availableActions, log, action: cleanAction });
   }
 };
 
@@ -910,76 +924,76 @@ const skipBuildFactory = () => {
 };
 
 const endManeuver = () => {
-  this.tickWithAction(Action.endManeuver());
-  this.maneuverOrigin = '';
+  tickWithAction(Action.endManeuver());
+  maneuverOrigin = '';
 };
 
 const back = () => {
-  // const lastTurn = imperial.log.pop();
-  // this.poppedTurns.push(lastTurn);
-  // let lastMoveType = this.game.log[this.game.log.length - 1].type;
+  const lastTurn = imperial.value.instance.log.pop();
+  poppedTurns.value.push(lastTurn);
+  let lastMoveType = imperial.value.instance.log[imperial.value.instance.log.length - 1].type;
 
-  // while ((lastMoveType !== 'rondel' && lastMoveType !== 'initialize') || lastMoveType === 'endGame') {
-  //   this.poppedTurns.push(this.game.log.pop());
-  //   lastMoveType = this.game.log[this.game.log.length - 1].type;
-  // }
+  while ((lastMoveType !== 'rondel' && lastMoveType !== 'initialize') || lastMoveType === 'endGame') {
+    poppedTurns.value.push(imperial.value.instance.log.pop());
+    lastMoveType = imperial.value.instance.log[imperial.value.instance.log.length - 1].type;
+  }
 
-  // const { log } = this.game;
-  // const { baseGame } = this.game;
+  const { log } = imperial.value.instance;
+  const { baseGame } = game;
 
-  // this.game = markRaw(new Imperial(this.board, new Logger('replay', this.game.id)));
-  // if (baseGame) {
-  //   this.game.baseGame = baseGame;
-  // }
-  // this.game.tickFromLog(log);
+  imperial.value.instance = markRaw(new ImperialGameCoordinator(board, new Logger('replay', imperial.value.instance.id)));
+  if (baseGame) {
+    imperial.value.instance.baseGame = baseGame;
+  }
+  imperial.value.instance.tickFromLog(log);
 };
 
 const backToRoundStart = () => {
   const startingNation = (game.baseGame === 'imperial' || game.baseGame === 'imperialEurope2030')
     ? Nation.AH : Nation2030.RU;
-  while ((imperial.log[imperial.log.length - 1].payload.nation !== startingNation)
-    || (imperial.log[imperial.log.length - 1].type !== 'rondel')) {
-    this.back();
+  while ((imperial.value.instance.log[imperial.value.instance.log.length - 1].payload.nation !== startingNation)
+    || (imperial.value.instance.log[imperial.value.instance.log.length - 1].type !== 'rondel')) {
+    back();
   }
 
   // Go back to beginning of startingNation's turn, one more
-  const lastTurn = imperial.log.pop();
-  this.poppedTurns.push(lastTurn);
+  const lastTurn = imperial.value.instance.log.pop();
+  poppedTurns.value.push(lastTurn);
 
-  const { log } = imperial;
+  const { log } = imperial.value.instance;
   const { baseGame } = game;
 
-  imperial = markRaw(new Imperial(this.board, new Logger('replay', game.id)));
+  imperial.value.instance = markRaw(new ImperialGameCoordinator(board, new Logger('replay', imperial.value.instance.id)));
   if (baseGame) {
-    game.baseGame = baseGame;
+    imperial.value.instance.baseGame = baseGame;
   }
-  imperial.tickFromLog(log);
+  imperial.value.instance.tickFromLog(log);
 };
 
 const backToGameStart = () => {
-  while (imperial.log[imperial.log.length - 1].type !== 'initialize') {
-    this.back();
+  while (imperial.value.instance.log[imperial.value.instance.log.length - 1].type !== 'initialize') {
+    back();
   }
 };
 
 const forward = () => {
-  const newLog = imperial.log;
-  newLog.push(poppedTurns.pop());
+  const newLog = imperial.value.instance.log;
+  newLog.push(poppedTurns.value.pop());
   while (poppedTurns[poppedTurns.length - 1]?.type === 'maneuver') {
-    newLog.push(poppedTurns.pop());
+    newLog.push(poppedTurns.value.pop());
   }
-  const { baseGame } = imperial;
+  const { baseGame } = imperial.value.instance;
 
-  imperial = markRaw(new Imperial(this.board, new Logger('replay', game.id)));
+  imperial.value.instance = markRaw(new ImperialGameCoordinator(board, new Logger('replay', imperial.value.instance.id)));
   if (baseGame) {
-    imperial.baseGame = baseGame;
+    imperial.value.instance.baseGame = baseGame;
   }
-  imperial.tickFromLog(newLog);
+  imperial.value.instance.tickFromLog(newLog);
 };
 
 const forwardToCurrentAction = () => {
-  while (this.poppedTurns.length > 0) {
-    this.forward();
+  while (poppedTurns.value.length > 0) {
+    forward();
   }
 };
 

@@ -45,6 +45,10 @@
 <script setup>
 import toTime from '../toTime';
 
+useHead({
+  title: 'Open Games - Imperial',
+});
+
 const props = defineProps({
   openGames: { type: Array, default: () => [] }, profile: { type: Object, default: () => {} },
 });
