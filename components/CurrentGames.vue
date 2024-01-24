@@ -1,6 +1,6 @@
 <template>
-  <v-row class="text-h5">
-    <v-col>
+  <v-row>
+    <v-col class="text-h5">
       Current Games
     </v-col>
   </v-row>
@@ -37,16 +37,14 @@
                   <v-col
                     v-for="player of players(game)"
                     :key="player.name"
-                    cols="auto"
                   >
-                    <span>{{ player.name }}</span>
+                    <div>{{ player.name }}</div>
                     <Flag
                       v-for="nation of player.nations"
                       :key="nation"
                       :nation="nation"
                       width="30"
                       height="20"
-                      class="mx-1"
                     />
                   </v-col>
                 </v-row>

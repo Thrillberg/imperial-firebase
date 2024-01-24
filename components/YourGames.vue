@@ -1,8 +1,10 @@
 <template>
   <v-container>
-    <div class="text-h5">
-      Your Games
-    </div>
+    <v-row>
+      <v-col class="text-h5">
+        Your Games
+      </v-col>
+    </v-row>
     <v-row
       v-masonry
       item-selector=".game"
@@ -47,16 +49,14 @@
                     <v-col
                       v-for="player of players(game)"
                       :key="player.name"
-                      cols="auto"
                     >
-                      <span>{{ player.name }}</span>
+                      <div>{{ player.name }}</div>
                       <Flag
                         v-for="nation of player.nations"
                         :key="nation"
                         :nation="nation"
                         width="30"
                         height="20"
-                        class="mx-1"
                       />
                     </v-col>
                   </v-row>

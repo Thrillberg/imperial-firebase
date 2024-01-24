@@ -664,7 +664,6 @@ const setUpBoard = async () => {
     newImperial.tickFromLog(gameLog);
     currentPlayer.value = newImperial.players[props.user.displayName];
     controllingPlayerName.value = newImperial.currentPlayerName;
-    console.log('setting up the board')
     imperial.value.instance = newImperial;
     gameStarted.value = true;
     audioNotification();
