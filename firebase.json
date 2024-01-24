@@ -8,8 +8,8 @@
   },
   "functions": [
     {
-      "source": ".output",
-      "runtime": "nodejs20"
+      "source": ".output/server",
+      "runtime": "nodejs18"
     }
   ],
   "hosting": {
@@ -21,6 +21,9 @@
         "source": "**",
         "function": "server"
       }
+    ],
+    "predeploy": [
+      "yarn && yarn run build --preset=firebase"
     ]
   },
   "emulators": {
