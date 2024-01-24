@@ -8,8 +8,8 @@
   },
   "functions": [
     {
-      "source": ".output/server",
-      "runtime": "nodejs18"
+      "source": ".output",
+      "runtime": "nodejs20"
     }
   ],
   "hosting": {
