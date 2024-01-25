@@ -524,9 +524,6 @@ import Rules from '../components/Rules.vue';
 import TimeTravelButtons from '../components/TimeTravelButtons.vue';
 import TurnStatus from '../components/TurnStatus.vue';
 
-import imperialBoard from '../../Domain/board';
-import imperial2030Board from '../../Domain/board2030';
-import imperialAsiaBoard from '../../Domain/boardAsia';
 import getGameLog from '../getGameLog';
 import setFavicon from '../setFavicon';
 
@@ -534,6 +531,8 @@ import startGame from '../lib/startGame';
 import { Nation, Nation2030 } from '../../Domain/constants';
 import notification from '../assets/notification.mp3';
 import { getDoc, getFirestore, doc, updateDoc, setDoc, onSnapshot, addDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import saveGameStateSnapshot from '~/lib/saveGameStateSnapshot';
+import getBoard from '~/lib/getBoard';
 
 const route = useRoute();
 const router = useRouter();
@@ -594,33 +593,14 @@ const getValidProvinces = () => {
   validProvinces.value = Array.from(provinces);
 };
 
-const saveSnapshot = async (state) => {
-  await addDoc(collection(db, 'games', route.params.id, 'snapshots'), {
-    state,
-    timestamp: Date.now(),
-  });
-};
-
 let gameStarted = ref(false);
 let currentPlayer = ref({});
 let controllingPlayerName = ref('');
 let hostingThisGame = ref(false);
 const validProvinces = ref([]);
 
-let boardConfig = {};
-let board;
-
 game.baseGame = gameSnap.get('baseGame');
-if (game.baseGame === 'imperial' || game.baseGame === 'imperialEurope2030') {
-  boardConfig = imperialBoardConfigs;
-  board = imperialBoard;
-} else if (game.baseGame === 'imperial2030') {
-  boardConfig = imperial2030BoardConfigs;
-  board = imperial2030Board;
-} else if (game.baseGame === 'imperialAsia') {
-  boardConfig = imperialAsiaBoardConfigs;
-  board = imperialAsiaBoard;
-}
+const { boardConfig, board } = getBoard(game.baseGame);
 const imperial = ref({ instance: null });
 const playersInGame = ref([]);
 
@@ -802,13 +782,15 @@ const tickWithAction = async (action) => {
       timestamp: Date.now(),
     })
     const newLog = [...imperial.value.instance.log];
-    // newLog.push(action);
     const newImperial = new ImperialGameCoordinator(board, game.id);
     newImperial.tickFromLog(newLog)
-    const state = newImperial.toJSON();
-    const availableActions = JSON.parse(JSON.stringify([...newImperial.availableActions]));
-    const log = JSON.parse(JSON.stringify(newImperial.log));
-    await saveSnapshot({ state, availableActions, log, action: cleanAction });
+    await saveGameStateSnapshot(
+      newImperial.toJSON(),
+      JSON.parse(JSON.stringify([...newImperial.availableActions])),
+      JSON.parse(JSON.stringify(newImperial.log)),
+      JSON.parse(JSON.stringify(action)),
+      route.params.id,
+    );
   }
 };
 

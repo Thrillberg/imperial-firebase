@@ -98,12 +98,15 @@
 
 <script setup>
 import Board from '../../components/Board.vue';
-import { defaultLatestState } from '../../translateToGameData';
-import { addDoc, collection, doc, getFirestore, setDoc } from 'firebase/firestore';
+import translateToGameData, { defaultLatestState } from '../../translateToGameData';
+import { addDoc, collection, getFirestore } from 'firebase/firestore';
 import imperialBoardConfigs from '../imperialBoardConfigs';
 import imperial2030BoardConfigs from '../imperial2030BoardConfigs';
 import imperialAsiaBoardConfigs from '../imperialAsiaBoardConfigs';
 import { faker } from '@faker-js/faker';
+import saveGameStateSnapshot from '~/lib/saveGameStateSnapshot';
+import ImperialGameCoordinator from '~/Domain/ImperialGameCoordinator';
+import getBoard from '~/lib/getBoard';
 
 const boardConfigs = {
   imperial: imperialBoardConfigs,
@@ -129,7 +132,7 @@ useHead({
 
 const openGame = async () => {
   const lovelyString = faker.word.adjective() + ' ' + faker.word.noun();
-  const gameRef = await addDoc(collection(db, "games"), {
+  const game = {
     name: lovelyString,
     host: props.user.displayName,
     baseGame: baseGame.value,
@@ -137,7 +140,18 @@ const openGame = async () => {
     isPublic: isPublic.value,
     players: [{ name: props.user.displayName, id: props.user.uid }],
     createdAt: new Date(),
-  });
+  };
+  const gameRef = await addDoc(collection(db, "games"), game);
+  const { board } = getBoard(baseGame);
+  const imperial = new ImperialGameCoordinator(board, gameRef.id);
+  const gameData = translateToGameData(Object.assign({}, game, { id: gameRef.id }));
+  await saveGameStateSnapshot(
+    JSON.parse(gameData.latestState),
+    JSON.parse(JSON.stringify([...imperial.availableActions])),
+    [],
+    {},
+    gameData.id,
+  );
 
   if (createDiscordChannel.value) {
     // Do some Discord stuff here

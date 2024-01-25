@@ -21,9 +21,6 @@
         "source": "**",
         "function": "server"
       }
-    ],
-    "predeploy": [
-      "yarn && yarn run build --preset=firebase"
     ]
   },
   "emulators": {
