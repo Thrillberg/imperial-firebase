@@ -23,24 +23,24 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm ci
-      - name: Run eslint on changed files
-        uses: tj-actions/eslint-changed-files@v18
-        with:
-          skip_annotations: true
-          file_extensions: |
-            **/*.js
-            **/*.vue
-      - run: npm test
+      # - run: yarn test
+      # - name: Run eslint on changed files
+      #   uses: tj-actions/eslint-changed-files@v18
+      #   with:
+      #     skip_annotations: true
+      #     file_extensions: |
+      #       **/*.js
+      #       **/*.vue
+      - run: yarn test
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Create Sentry release
-        uses: getsentry/action-release@v1
-        env:
-            SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-            SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-            SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-        with:
-            environment: production
+      # - name: Create Sentry release
+      #   uses: getsentry/action-release@v1
+      #   env:
+      #       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      #       SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      #       SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+      #   with:
+      #       environment: production

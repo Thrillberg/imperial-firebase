@@ -3,7 +3,7 @@ import Action from '../action';
 import { Bond, Nation } from '../constants';
 import GameBoard from '../gameBoard';
 
-import Logger from '../../src/Logger';
+import Logger from '../../Logger';
 
 import Imperial from '../ImperialGameCoordinator';
 
