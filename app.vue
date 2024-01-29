@@ -50,13 +50,13 @@ const gamesCollection = collection(db, 'games');
 const getLatestState = async (snapshotsCollection, game, doc) => {
   const snapshotsQuery = await query(snapshotsCollection, orderBy('timestamp', 'desc'), limit(1));
   const snapshotsSnap = await getDocs(snapshotsQuery);
-  let latestState;
+  let stateSnapshot;
   snapshotsSnap.forEach((snapshot) => {
-    latestState = snapshot.data();
+    stateSnapshot = snapshot.data();
   })
   const gameIndex = games.value.findIndex((game) => game.id === doc.id);
   games.value.splice(gameIndex, 1)
-  games.value.push(Object.assign({}, translateToGameData(game), { id: doc.id, latestState }));
+  games.value.push(Object.assign({}, translateToGameData(game), { id: doc.id, latestState: stateSnapshot?.state }));
 }
 
 const getGames = async () => {
@@ -71,10 +71,13 @@ const getGames = async () => {
     const snapshotsUnsub = onSnapshot(snapshotsCollection, async () => {
       await getLatestState(snapshotsCollection, game, doc);
     });
+    if (!game.currentPlayerName) {
+      games.value.push(Object.assign({}, translateToGameData(game), { id: doc.id }));
+    }
 
     let inGame = false;
     game.players.forEach((player) => {
-      if (player.name === user.displayName) {
+      if (player.id === user.displayName) {
         inGame = true;
       }
     });

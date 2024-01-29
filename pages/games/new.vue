@@ -142,16 +142,11 @@ const openGame = async () => {
     createdAt: new Date(),
   };
   const gameRef = await addDoc(collection(db, "games"), game);
-  const { board } = getBoard(baseGame);
-  const imperial = new ImperialGameCoordinator(board, gameRef.id);
-  const gameData = translateToGameData(Object.assign({}, game, { id: gameRef.id }));
-  await saveGameStateSnapshot(
-    JSON.parse(gameData.latestState),
-    JSON.parse(JSON.stringify([...imperial.availableActions])),
-    [],
-    {},
-    gameData.id,
-  );
+  // const gameData = translateToGameData(Object.assign({}, game, { id: gameRef.id }));
+  // await saveGameStateSnapshot({
+  //   state: JSON.parse(gameData.latestState),
+  //   id: gameData.id,
+  // });
 
   if (createDiscordChannel.value) {
     // Do some Discord stuff here

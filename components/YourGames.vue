@@ -25,7 +25,7 @@
               <v-card
                 :title="game.name + (game.players.length === 1 ? ' (solo)' : '')"
                 :subtitle="currentPlayer(game)"
-                :color="backgroundColor(isHovering, nationColors(game.latestState.state.state.currentNation))"
+                :color="backgroundColor(isHovering, nationColors(game.latestState?.currentNation))"
                 v-bind="props"
               >
                 <template
@@ -42,7 +42,7 @@
                 <v-card-text>
                   <Board
                     :config="boardConfigs[game.baseGame]"
-                    :game="Imperial.loadFromJSON(game.latestState.state.state)"
+                    :game="Imperial.loadFromJSON(game.latestState)"
                     :game-started="true"
                   />
                   <v-row v-if="game.latestState">
@@ -82,7 +82,6 @@ import toTime from '../toTime';
 import imperialBoardConfigs from '../imperialBoardConfigs';
 import imperial2030BoardConfigs from '../imperial2030BoardConfigs';
 import imperialAsiaBoardConfigs from '../imperialAsiaBoardConfigs';
-import { collection, getDocs, getFirestore, limit, orderBy, query } from 'firebase/firestore';
 
 export default {
   name: 'YourGames',
@@ -137,11 +136,11 @@ export default {
 
       for (const player of game.players) {
         const playerNations = [];
-        const playerObj = { name: player.name };
-        const { nations, currentNation } = game.latestState.state.state;
+        const playerObj = { name: player.id };
+        const { nations, currentNation } = game.latestState;
 
         nations.forEach((nation) => {
-          if (nation[Object.keys(nation)[0]].controller === player.name) {
+          if (nation[Object.keys(nation)[0]].controller === player.id) {
             const nationName = Object.keys(nation)[0];
             playerNations.push(nationName);
 
@@ -173,7 +172,11 @@ export default {
       return '';
     },
     nationColors(nation) {
-      return nationColors[nation];
+      if (nation) {
+        return nationColors[nation];
+      } else {
+        return 'grey';
+      }
     },
   },
 };

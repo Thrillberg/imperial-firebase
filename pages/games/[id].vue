@@ -507,10 +507,6 @@ import { Howl } from 'howler';
 import ImperialGameCoordinator from '../../Domain/ImperialGameCoordinator';
 import Action from '../../Domain/action';
 
-import imperialBoardConfigs from '../imperialBoardConfigs';
-import imperial2030BoardConfigs from '../imperial2030BoardConfigs';
-import imperialAsiaBoardConfigs from '../imperialAsiaBoardConfigs';
-
 import Logger from '../Logger';
 
 import Board from '../components/Board.vue';
@@ -533,6 +529,8 @@ import notification from '../assets/notification.mp3';
 import { getDoc, getFirestore, doc, updateDoc, setDoc, onSnapshot, addDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import saveGameStateSnapshot from '~/lib/saveGameStateSnapshot';
 import getBoard from '~/lib/getBoard';
+import translateToGameData from '~/translateToGameData';
+import anonymityConfirmed from '~/lib/anonymityConfirmed';
 
 const route = useRoute();
 const router = useRouter();
@@ -561,7 +559,7 @@ const logTimestamps = [];
 let gameLog;
 
 const audioNotification = () => {
-  if (props.user && props.user.displayName === imperial.value.instance.currentPlayerName && !silenceAudio) {
+  if (props.user && props.user.displayName === imperial.value.instance?.currentPlayerName && !silenceAudio) {
     new Howl({ src: [notification] }).play();
   }
 };
@@ -626,13 +624,13 @@ const setUpBoard = async () => {
   game.players = gameSnap.get('players');
   game.state = gameSnap.get('state');
   playersInGame.value = game.players.map((p) => p.name);
-  hostingThisGame = game.host === props.user.displayName;
+  hostingThisGame = game.host === props.user?.displayName;
 
   game.variant = gameSnap.get('variant');
   game.players = gameSnap.get('players');
 
   for (const player of playersInGame.value) {
-    if (player === props.user.displayName) {
+    if (player === props.user?.displayName) {
       playingInThisGame.value = true;
     }
   }
@@ -646,12 +644,13 @@ const setUpBoard = async () => {
     controllingPlayerName.value = newImperial.currentPlayerName;
     imperial.value.instance = newImperial;
     gameStarted.value = true;
-    audioNotification();
     getValidProvinces();
   }
+  setFavicon(props.games, props.user, game.id);
 }
 
 await setUpBoard();
+audioNotification();
 useHead({
   title: game.name + ' - Imperial',
 });
@@ -746,10 +745,14 @@ const otherPlayersInGame = () => {
 };
 
 const joinGame = async () => {
+  let user = props.user;
+  if (!user) {
+    user = await anonymityConfirmed(props.lovelyString);
+  }
   joinedGame.value = true;
   const gameSnap = await getDoc(gameRef);
   const players = gameSnap.data().players
-  players.push({ name: props.user.displayName, id: props.user.uid });
+  players.push({ name: user.displayName, id: user.uid });
   await updateDoc(gameRef, { players })
 };
 
@@ -783,14 +786,17 @@ const tickWithAction = async (action) => {
     })
     const newLog = [...imperial.value.instance.log];
     const newImperial = new ImperialGameCoordinator(board, game.id);
-    newImperial.tickFromLog(newLog)
-    await saveGameStateSnapshot(
-      newImperial.toJSON(),
-      JSON.parse(JSON.stringify([...newImperial.availableActions])),
-      JSON.parse(JSON.stringify(newImperial.log)),
-      JSON.parse(JSON.stringify(action)),
-      route.params.id,
-    );
+    newImperial.tickFromLog(newLog);
+    await updateDoc(gameRef, {
+      currentPlayerName: newImperial.currentPlayerName,
+    });
+    await saveGameStateSnapshot({
+      state: newImperial.toJSON(),
+      availableActions: JSON.parse(JSON.stringify(newImperial.availableActions)),
+      log: JSON.parse(JSON.stringify(newImperial.log)),
+      action: JSON.parse(JSON.stringify(action)),
+      id: route.params.id,
+    });
   }
 };
 

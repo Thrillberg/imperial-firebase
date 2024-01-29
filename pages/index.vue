@@ -38,7 +38,7 @@ const yourGames = () => {
   return props.games.filter((game) => {
     let inGame = false;
     game.players.forEach((player) => {
-      if (player.name === props.user.displayName) {
+      if (player.id === props.user.displayName) {
         inGame = true;
       }
     });
