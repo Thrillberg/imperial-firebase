@@ -1,6 +1,6 @@
-import favicon from './assets/favicon.ico';
-import favicon2 from './assets/favicon2.ico';
-import favicon3 from './assets/favicon3.ico';
+import favicon from './assets/icons/favicon.ico';
+import favicon2 from './assets/icons/favicon2.ico';
+import favicon3 from './assets/icons/favicon3.ico';
 
 export default (games, user, routeId) => {
   const link = document.createElement('link');

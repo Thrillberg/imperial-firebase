@@ -526,15 +526,11 @@ import setFavicon from '../setFavicon';
 import startGame from '../lib/startGame';
 import { Nation, Nation2030 } from '../../Domain/constants';
 import notification from '../assets/notification.mp3';
-import { getDoc, getFirestore, doc, updateDoc, setDoc, onSnapshot, addDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { getDoc, getFirestore, doc, updateDoc, onSnapshot, addDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import saveGameStateSnapshot from '~/lib/saveGameStateSnapshot';
 import getBoard from '~/lib/getBoard';
-import translateToGameData from '~/translateToGameData';
 import anonymityConfirmed from '~/lib/anonymityConfirmed';
 
-const route = useRoute();
-const router = useRouter();
-const db = getFirestore();
 const props = defineProps({
   user: { type: Object, default: () => {} },
   env: { type: String, default: '' },
@@ -544,7 +540,12 @@ const props = defineProps({
   users: { type: Array, default: () => [] },
 });
 
+// Router variables
+const route = useRoute();
+const router = useRouter();
+
 // Firebase variables
+const db = getFirestore();
 const gameRef = doc(db, 'games', route.params.id)
 let gameSnap = await getDoc(gameRef);
 const actionsCollection = collection(db, 'games', route.params.id, 'actions')
@@ -553,7 +554,6 @@ let actionsQuery;
 
 const joinedGame = ref(false);
 const playingInThisGame = ref(false);
-let game = {};
 let actions = [];
 const logTimestamps = [];
 let gameLog;
@@ -597,7 +597,9 @@ let controllingPlayerName = ref('');
 let hostingThisGame = ref(false);
 const validProvinces = ref([]);
 
-game.baseGame = gameSnap.get('baseGame');
+let game = {
+  baseGame: gameSnap.get('baseGame'),
+};
 const { boardConfig, board } = getBoard(game.baseGame);
 const imperial = ref({ instance: null });
 const playersInGame = ref([]);
@@ -637,6 +639,18 @@ const setUpBoard = async () => {
 
   // Game has begun
   if (actions.length > 0) {
+    if (imperial.value.instance?.winner) {
+      const scores = {};
+      for (const name in imperial.value.instance.players) {
+        scores[name] = imperial.value.instance.players[name].rawScore + imperial.value.instance.players[name].cash;
+      }
+
+      await updateDoc(gameRef, {
+        winner: imperial.value.instance.winner,
+        scores,
+      });
+    }
+
     const newImperial = new ImperialGameCoordinator(board, new Logger('dev', game.id));
     gameLog = getGameLog(actions, game.baseGame);
     newImperial.tickFromLog(gameLog);
@@ -650,10 +664,10 @@ const setUpBoard = async () => {
 }
 
 await setUpBoard();
-audioNotification();
 useHead({
   title: game.name + ' - Imperial',
 });
+audioNotification();
 
 const rulesDialogFromSidebar = ref(false);
 const rulesDialog = ref(false);
@@ -667,10 +681,10 @@ const tradedInValue = ref(0);
 const tradedInBondNation = ref('');
 const importProvince = ref('');
 
+// Firestore listeners
 const gameUnsub = onSnapshot(gameRef, () => {
   setUpBoard();
 });
-
 const actionsUnsub = onSnapshot(actionsCollection, async () => {
   setUpBoard();
 })
@@ -685,13 +699,6 @@ const actionsUnsub = onSnapshot(actionsCollection, async () => {
 // }
 
       // // apiClient.updateCurrentPlayerName(this.$route.params.id, this.game.currentPlayerName);
-      // if (this.game.winner) {
-      //   const scores = {};
-      //   for (const name in this.game.players) {
-      //     scores[name] = this.game.players[name].rawScore + this.game.players[name].cash;
-      //   }
-      //   // apiClient.updateWinner(this.$route.params.id, this.game.winner, scores);
-      // }
 
 // First time user is playing a solo game
 if (route.query.solo) {
