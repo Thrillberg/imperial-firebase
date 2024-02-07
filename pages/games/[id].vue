@@ -49,7 +49,7 @@
       </template>
     </v-tooltip>
     <v-row
-      :class="playersInGame.length === 1 ? 'bg-secondary' : ''"
+      :class="game.players.length === 1 ? 'bg-secondary' : ''"
       justify="space-between"
       class="py-3"
     >
@@ -75,7 +75,7 @@
         </v-btn>
       </v-col>
       <v-col
-        v-if="playersInGame.length === 1"
+        v-if="game.players.length === 1"
         style="text-align: right;"
         class="mx-2"
       >
@@ -395,7 +395,7 @@
               <div v-if="hostingThisGame">
                 <p>
                   <b>Players:</b>
-                  <span>{{ playersInGame.join(", ") }}</span>
+                  <span>{{ game.players.map(p => p.name).join(", ") }}</span>
                 </p>
                 <p>
                   <b>Base game:</b>
@@ -406,7 +406,7 @@
                   <span>{{ variant(game.variant) }}</span>
                 </p>
                 <v-btn
-                  v-if="playersInGame.length === 1"
+                  v-if="game.players.length === 1"
                   color="primary-darken-1"
                   class="mt-2"
                   block
@@ -443,7 +443,7 @@
               <div v-else-if="playingInThisGame">
                 <p>
                   <b>Players:</b>
-                  <span>{{ playersInGame.join(", ") }}</span>
+                  <span>{{ game.players.map(p => p.name).join(", ") }}</span>
                 </p>
                 <p>
                   <b>Base game:</b>
@@ -468,7 +468,7 @@
                 <div class="mx-auto p-2 text-center">
                   <p>
                     <b>Players:</b>
-                    <span>{{ playersInGame.join(", ") }}</span>
+                    <span>{{ game.players.map(p => p.name).join(", ") }}</span>
                   </p>
                   <p>
                     <b>Base game:</b>
@@ -480,7 +480,7 @@
                   </p>
                 </div>
                 <v-btn
-                  v-if="playersInGame.length < 6"
+                  v-if="game.players.length < 6"
                   color="primary-darken-1"
                   block
                   @click="joinGame"
@@ -530,6 +530,7 @@ import { getDoc, getFirestore, doc, updateDoc, onSnapshot, addDoc, collection, g
 import saveGameStateSnapshot from '~/lib/saveGameStateSnapshot';
 import getBoard from '~/lib/getBoard';
 import anonymityConfirmed from '~/lib/anonymityConfirmed';
+import notifyNextPlayer from '~/lib/notifyNextPlayer';
 
 const props = defineProps({
   user: { type: Object, default: () => {} },
@@ -552,6 +553,7 @@ const actionsCollection = collection(db, 'games', route.params.id, 'actions')
 let actionsSnap;
 let actionsQuery;
 
+const game = ref({});
 const joinedGame = ref(false);
 const playingInThisGame = ref(false);
 let actions = [];
@@ -597,12 +599,11 @@ let controllingPlayerName = ref('');
 let hostingThisGame = ref(false);
 const validProvinces = ref([]);
 
-let game = {
+game.value = {
   baseGame: gameSnap.get('baseGame'),
 };
-const { boardConfig, board } = getBoard(game.baseGame);
+const { boardConfig, board } = getBoard(game.value.baseGame);
 const imperial = ref({ instance: null });
-const playersInGame = ref([]);
 
 const setUpBoard = async () => {
   gameSnap = await getDoc(gameRef);
@@ -619,20 +620,18 @@ const setUpBoard = async () => {
     logTimestamps.push(doc.data().timestamp)
   })
 
-  game.id = route.params.id;
-  // game.baseGame = gameSnap.get('baseGame');
-  game.name = gameSnap.get('name');
-  game.host = gameSnap.get('host');
-  game.players = gameSnap.get('players');
-  game.state = gameSnap.get('state');
-  playersInGame.value = game.players.map((p) => p.name);
-  hostingThisGame = game.host === props.user?.displayName;
+  game.value.id = route.params.id;
+  game.value.name = gameSnap.get('name');
+  game.value.host = gameSnap.get('host');
+  game.value.players = gameSnap.get('players');
+  game.value.state = gameSnap.get('state');
+  hostingThisGame = game.value.host === props.user?.displayName;
 
-  game.variant = gameSnap.get('variant');
-  game.players = gameSnap.get('players');
+  game.value.variant = gameSnap.get('variant');
+  game.value.players = gameSnap.get('players');
 
-  for (const player of playersInGame.value) {
-    if (player === props.user?.displayName) {
+  for (const player of game.value.players) {
+    if (player.id === props.user?.uid) {
       playingInThisGame.value = true;
     }
   }
@@ -652,7 +651,7 @@ const setUpBoard = async () => {
     }
 
     const newImperial = new ImperialGameCoordinator(board, new Logger('dev', game.id));
-    gameLog = getGameLog(actions, game.baseGame);
+    gameLog = getGameLog(actions, game.value.baseGame);
     newImperial.tickFromLog(gameLog);
     currentPlayer.value = newImperial.players[props.user.displayName];
     controllingPlayerName.value = newImperial.currentPlayerName;
@@ -660,12 +659,12 @@ const setUpBoard = async () => {
     gameStarted.value = true;
     getValidProvinces();
   }
-  setFavicon(props.games, props.user, game.id);
+  setFavicon(props.games, props.user, game.value.id);
 }
 
 await setUpBoard();
 useHead({
-  title: game.name + ' - Imperial',
+  title: game.value.name + ' - Imperial',
 });
 audioNotification();
 
@@ -689,20 +688,11 @@ const actionsUnsub = onSnapshot(actionsCollection, async () => {
   setUpBoard();
 })
 
-// if (
-//   oldPlayerName !== this.game.currentPlayerName
-//   && (oldPlayerName === this.profile.username || (
-//     !oldPlayerName && this.game.currentPlayerName
-//   ))
-// ) {
-//   // apiClient.notifyNextPlayer(this.$route.params.id, this.game.currentPlayerName);
-// }
-
       // // apiClient.updateCurrentPlayerName(this.$route.params.id, this.game.currentPlayerName);
 
 // First time user is playing a solo game
 if (route.query.solo) {
-  await startGame(game, gameRef);
+  await startGame(game.value, gameRef);
   await setUpBoard();
 }
 
@@ -748,7 +738,7 @@ const paused = () => {
   //   // },
 
 const otherPlayersInGame = () => {
-  return playersInGame.value.filter((player) => player !== props.user.displayName);
+  return game.value.players.filter((player) => player !== props.user.displayName);
 };
 
 const joinGame = async () => {
@@ -783,6 +773,7 @@ const leaveGame = async (playerName) => {
 
 const tickWithAction = async (action) => {
   controllingPlayerName.value = imperial.value.instance.currentPlayerName;
+  const oldPlayer = game.value.players.find(p => p.name === controllingPlayerName.value);
   if (!paused()) {
     displayFight(action);
     displayProduction(action);
@@ -792,7 +783,7 @@ const tickWithAction = async (action) => {
       timestamp: Date.now(),
     })
     const newLog = [...imperial.value.instance.log];
-    const newImperial = new ImperialGameCoordinator(board, game.id);
+    const newImperial = new ImperialGameCoordinator(board, game.value.id);
     newImperial.tickFromLog(newLog);
     await updateDoc(gameRef, {
       currentPlayerName: newImperial.currentPlayerName,
@@ -803,6 +794,14 @@ const tickWithAction = async (action) => {
       log: JSON.parse(JSON.stringify(newImperial.log)),
       action: JSON.parse(JSON.stringify(action)),
       id: route.params.id,
+    });
+    await notifyNextPlayer({
+      oldPlayer,
+      newImperial,
+      user: props.user,
+      db,
+      route,
+      game: game.value,
     });
   }
 };

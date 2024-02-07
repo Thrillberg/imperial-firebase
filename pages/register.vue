@@ -52,6 +52,7 @@
 import { createUserWithEmailAndPassword, EmailAuthProvider, getAuth, linkWithCredential } from "firebase/auth";
 import { updateCurrentUserProfile } from "vuefire";
 import { setDoc, doc, getFirestore } from 'firebase/firestore';
+import updateAllGamesWithNewDisplayName from '../lib/updateAllGamesWithNewDisplayName';
 
 const emits = defineEmits(['registered']);
 
@@ -62,15 +63,20 @@ const errors = [];
 const username = ref('');
 const password = ref('');
 const email = ref('');
+
 useHead({
   title: 'Register - Imperial',
 });
+
+const props = defineProps({ games: { type: Array, default: () => [] }});
+
 const register = async () => {
   const credential = EmailAuthProvider.credential(email.value, password.value);
   if (auth.currentUser) {
-    await linkWithCredential(auth.currentUser, credential)
+    await linkWithCredential(auth.currentUser, credential);
+    await updateAllGamesWithNewDisplayName(username.value, auth.currentUser.displayName);
   } else {
-    await createUserWithEmailAndPassword(auth, email.value, password.value)
+    await createUserWithEmailAndPassword(auth, email.value, password.value);
   }
   await updateCurrentUserProfile({ displayName: username.value })
   await setDoc(doc(db, 'userSettings', auth.currentUser.uid), {
